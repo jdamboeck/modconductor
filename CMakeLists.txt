@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.18)
-project(cli-modplayer LANGUAGES CXX)
+project(modconductor VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -7,122 +7,95 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-include(CheckIncludeFile)
+option(MODCONDUCTOR_BUILD_TESTS "Build the modconductor tests" ON)
 
+# Warnings shared by every target.
+add_library(modconductor_warnings INTERFACE)
+target_compile_options(modconductor_warnings INTERFACE -Wall -Wextra -Wpedantic)
+
+# --- Required dependencies -------------------------------------------------
+find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(PORTAUDIO REQUIRED portaudio-2.0)
-pkg_check_modules(OPENMPT REQUIRED libopenmpt)
 
-pkg_check_modules(FLAC flac)
-pkg_check_modules(LAME lame)
+pkg_check_modules(OPENMPT IMPORTED_TARGET libopenmpt)
+if(NOT OPENMPT_FOUND)
+    message(FATAL_ERROR "libopenmpt not found (pkg-config module 'libopenmpt'). "
+                        "Install it, e.g. 'sudo apt install libopenmpt-dev'.")
+endif()
 
+pkg_check_modules(PORTAUDIO IMPORTED_TARGET portaudio-2.0)
+if(NOT PORTAUDIO_FOUND)
+    message(FATAL_ERROR "PortAudio not found (pkg-config module 'portaudio-2.0'). "
+                        "Install it, e.g. 'sudo apt install portaudio19-dev'.")
+endif()
+
+pkg_check_modules(XMP IMPORTED_TARGET libxmp)
+if(NOT XMP_FOUND)
+    message(FATAL_ERROR "libxmp not found (pkg-config module 'libxmp'). "
+                        "modconductor needs libxmp for sample and envelope art. "
+                        "Install it, e.g. 'sudo apt install libxmp-dev'.")
+endif()
+
+message(STATUS "libopenmpt ${OPENMPT_VERSION}, libxmp ${XMP_VERSION}, PortAudio ${PORTAUDIO_VERSION}")
+
+# --- Optional dependencies (export) ----------------------------------------
+pkg_check_modules(FLAC IMPORTED_TARGET flac)
+
+pkg_check_modules(LAME IMPORTED_TARGET lame)
 if(NOT LAME_FOUND)
-    find_library(LAME_LIBRARIES NAMES mp3lame)
-    find_path(LAME_INCLUDE_DIRS NAMES lame/lame.h)
-    if(LAME_LIBRARIES AND LAME_INCLUDE_DIRS)
+    find_library(LAME_LIBRARY NAMES mp3lame)
+    find_path(LAME_INCLUDE_DIR NAMES lame/lame.h)
+    if(LAME_LIBRARY AND LAME_INCLUDE_DIR)
         set(LAME_FOUND TRUE)
-        message(STATUS "Found LAME manually: ${LAME_LIBRARIES}")
+        add_library(modconductor_lame UNKNOWN IMPORTED)
+        set_target_properties(modconductor_lame PROPERTIES
+            IMPORTED_LOCATION "${LAME_LIBRARY}"
+            INTERFACE_INCLUDE_DIRECTORIES "${LAME_INCLUDE_DIR}")
+        message(STATUS "Found LAME manually: ${LAME_LIBRARY}")
     endif()
 endif()
 
+if(FLAC_FOUND)
+    message(STATUS "FLAC export: enabled")
+else()
+    message(STATUS "FLAC export: disabled (libFLAC not found)")
+endif()
+if(LAME_FOUND)
+    message(STATUS "MP3 export: enabled")
+else()
+    message(STATUS "MP3 export: disabled (LAME not found)")
+endif()
+
+# --- FTXUI (terminal I/O only; linked by modconductor_ui and the app) -------
 include(FetchContent)
+set(FTXUI_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(FTXUI_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(FTXUI_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(FTXUI_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(
     ftxui
     GIT_REPOSITORY https://github.com/ArthurSonzogni/ftxui.git
-    GIT_TAG v5.0.0
+    GIT_TAG v6.1.9
+    GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(ftxui)
 
-add_library(note_formatter STATIC
-    src/note_formatter.cpp
-)
-target_include_directories(note_formatter
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
+# --- Libraries and executable ----------------------------------------------
+add_subdirectory(src/core)
+add_subdirectory(src/audio)
+add_subdirectory(src/ui)
 
-target_compile_options(note_formatter
-    PRIVATE
-        -Wall -Wextra -Wpedantic
-)
+add_executable(modconductor src/main.cpp)
+target_compile_definitions(modconductor PRIVATE
+    MODCONDUCTOR_VERSION="${PROJECT_VERSION}")
+target_link_libraries(modconductor PRIVATE
+    modconductor_ui
+    modconductor_audio
+    modconductor_core
+    modconductor_warnings)
 
-add_executable(cli-modplayer
-    src/main.cpp
-    src/player.cpp
-    src/ui.cpp
-    src/config.cpp
-    src/audio_effects.cpp
-    src/audio_exporter.cpp
-    src/file_browser.cpp
-    src/file_browser_ui.cpp
-    src/simple_ui.cpp
-)
-
-target_link_libraries(cli-modplayer
-    PRIVATE
-        note_formatter
-        ${PORTAUDIO_LIBRARIES}
-        ${OPENMPT_LIBRARIES}
-        ftxui::component
-)
-
-if(FLAC_FOUND)
-    target_link_libraries(cli-modplayer PRIVATE ${FLAC_LIBRARIES})
-    target_compile_definitions(cli-modplayer PRIVATE HAVE_FLAC)
-    message(STATUS "FLAC support enabled")
-else()
-    message(STATUS "FLAC support disabled (libFLAC not found)")
+# --- Tests -----------------------------------------------------------------
+if(MODCONDUCTOR_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
 endif()
-
-if(LAME_FOUND)
-    target_link_libraries(cli-modplayer PRIVATE ${LAME_LIBRARIES})
-    target_compile_definitions(cli-modplayer PRIVATE HAVE_LAME)
-    message(STATUS "MP3 support enabled")
-else()
-    message(STATUS "MP3 support disabled (LAME library not found)")
-endif()
-
-target_include_directories(cli-modplayer
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${PORTAUDIO_INCLUDE_DIRS}
-        ${OPENMPT_INCLUDE_DIRS}
-)
-
-if(FLAC_FOUND)
-    target_include_directories(cli-modplayer PRIVATE ${FLAC_INCLUDE_DIRS})
-endif()
-
-if(LAME_FOUND)
-    target_include_directories(cli-modplayer PRIVATE ${LAME_INCLUDE_DIRS})
-endif()
-
-target_compile_options(cli-modplayer
-    PRIVATE
-        -Wall -Wextra -Wpedantic
-        ${PORTAUDIO_CFLAGS_OTHER}
-        ${OPENMPT_CFLAGS_OTHER}
-)
-
-target_link_directories(cli-modplayer
-    PRIVATE
-        ${PORTAUDIO_LIBRARY_DIRS}
-        ${OPENMPT_LIBRARY_DIRS}
-)
-
-add_executable(note_formatter_tests
-    tests/test_note_formatter.cpp
-)
-
-target_link_libraries(note_formatter_tests
-    PRIVATE
-        note_formatter
-)
-
-target_compile_options(note_formatter_tests
-    PRIVATE
-        -Wall -Wextra -Wpedantic
-)
-
-enable_testing()
-add_test(NAME note_formatter_tests COMMAND note_formatter_tests)

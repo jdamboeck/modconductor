@@ -1,53 +1,34 @@
-#include "player.hpp"
-#include "ui.hpp"
-#include "config.hpp"
-#include "file_browser_ui.hpp"
-#include "simple_ui.hpp"
+// Placeholder entry point for the M0 rebuild. Issue 0.8 replaces it with the
+// real app. It never opens audio or the terminal.
 
-#include <exception>
-#include <filesystem>
-#include <iostream>
+#include <cstdio>
+#include <string_view>
 
-int main(int argc, char **argv) {
-    std::filesystem::path module_path;
-    bool simple_mode = false;
-    for (int i = 1; i < argc; ++i) {
-        std::string arg = argv[i];
-        if (arg == "--simple") simple_mode = true;
-        else if (arg[0] != '-') module_path = arg;
+#ifndef MODCONDUCTOR_VERSION
+#define MODCONDUCTOR_VERSION "0.0.0"
+#endif
+
+int main(int argc, char** argv) {
+  for (int i = 1; i < argc; ++i) {
+    const std::string_view arg = argv[i];
+    if (arg == "--version") {
+      std::printf("modconductor %s\n", MODCONDUCTOR_VERSION);
+      return 0;
     }
-    if (module_path.empty()) {
-        auto selected = tracker::run_file_browser_ui(std::filesystem::current_path());
-        if (!selected) {
-            std::cout << "No file selected. Exiting." << std::endl;
-            return 0;
-        }
-        module_path = *selected;
+    if (arg == "--help" || arg == "-h") {
+      std::printf(
+          "usage: modconductor [--no-recursive] [FILE|DIR]...\n"
+          "\n"
+          "Terminal tracker-module player (MOD/XM/S3M/IT...).\n"
+          "\n"
+          "  --no-recursive  do not descend into subdirectories\n"
+          "  --version       print the version and exit\n"
+          "  --help          print this help and exit\n"
+          "\n"
+          "The M0 rebuild is in progress; playback is not wired up yet.\n");
+      return 0;
     }
-    if (!std::filesystem::exists(module_path)) {
-        std::cerr << "File not found: " << module_path << std::endl;
-        return 1;
-    }
-    try {
-        tracker::Config config;
-        tracker::Player player(module_path.string());
-        player.set_volume(config.get_volume());
-        player.start();
-        if (simple_mode) {
-            tracker::SimpleUi simple_ui(player);
-            simple_ui.run();
-        } else {
-            std::string module_name = module_path.stem().string();
-            tracker::Ui ui(player, config, module_name);
-            ui.run();
-        }
-        player.stop();
-        config.save();
-        return 0;
-    } catch (const std::exception &ex) {
-        std::cerr << "Fatal error: " << ex.what() << std::endl;
-    } catch (...) {
-        std::cerr << "Unknown error occurred." << std::endl;
-    }
-    return 1;
+  }
+  std::printf("modconductor: M0 rebuild in progress\n");
+  return 0;
 }
