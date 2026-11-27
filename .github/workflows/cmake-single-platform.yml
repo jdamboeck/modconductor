@@ -3,14 +3,8 @@ name: Build
 on:
   push:
     branches: [ "main" ]
-    paths-ignore:
-      - 'README.md'
-      - 'README/*.md'
   pull_request:
     branches: [ "main" ]
-    paths-ignore:
-      - 'README.md'
-      - 'README/*.md'
 
 env:
   BUILD_TYPE: Release
@@ -26,13 +20,16 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake g++ pkg-config libopenmpt-dev portaudio19-dev libncursesw5-dev
+          sudo apt-get install -y cmake g++ pkg-config libopenmpt-dev portaudio19-dev libxmp-dev libflac-dev libmp3lame-dev
+
+      - name: Dependency versions
+        run: pkg-config --modversion libopenmpt libxmp portaudio-2.0
 
       - name: Configure CMake
         run: cmake -S ${{ github.workspace }} -B ${{ env.BUILD_DIR }} -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
 
       - name: Build
-        run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }}
+        run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} -j
 
       - name: Test
         working-directory: ${{ env.BUILD_DIR }}
@@ -42,7 +39,5 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cli-modplayer-${{ env.BUILD_TYPE }}
-          path: |
-            ${{ env.BUILD_DIR }}/cli-modplayer
-            ${{ env.BUILD_DIR }}/note_formatter_tests
+          name: modconductor-${{ env.BUILD_TYPE }}
+          path: ${{ env.BUILD_DIR }}/modconductor

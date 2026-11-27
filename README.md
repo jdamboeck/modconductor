@@ -1,69 +1,57 @@
-# cli-modplayer
+# modconductor
 
-A console Module player (.mod, .xm, .s3m, .it etc.) for Linux inspired by tools like ProTracker. The app streams audio through PortAudio, loads songs with libopenmpt, and shows a live channel grid in the terminal using FTXUI.
-[Watch the showcase video](https://www.youtube.com/watch?v=P0_rXYO8r1w)
-## Features
+A terminal tracker-module player (`.mod`, `.xm`, `.s3m`, `.it` and everything else libopenmpt
+plays) built around one interface, the **Conductor** dashboard: a full-height playlist next to
+live panels (song map, instruments, stereo stage, harmony, pulse and an event log), drawn on an
+exact character grid. Playback runs on libopenmpt and PortAudio; libxmp supplies the sample and
+envelope art; FTXUI handles terminal input and output.
 
-- Plays the tracker formats handled by libopenmpt (`.mod`, `.xm`, `.s3m`, `.it`, ...).
-- Color grid with vertical channel panels that fall like in trackers, fitting the visible channels, paging through the rest, listing the next rows, and fading notes for earlier and upcoming beats.
-- Live VU bars above every column to display channel power with.
-- Keyboard shortcuts for pause, order jumps, and fast row scrubbing.
-- Toggle overlay with tracker info, counts of instruments and samples, and a slice of the module message.
-- Gentle status strip that confirms actions without covering the pattern view.
-- Runs entirely inside the terminal.
+## Status
 
-<img src="https://i.imgur.com/lp31HsJ.png">
+The project is in the **M0 rebuild**: the repository has been restructured into the
+`modconductor_core`, `modconductor_audio` and `modconductor_ui` libraries, the legacy UIs are
+gone, and the core is being rewritten. The current binary is a placeholder that only answers
+`--version` and `--help`. See the milestones and the pinned "Roadmap" issue for progress.
 
-## Install
-cli-modplayer is available on [AUR](https://aur.archlinux.org/packages/cli-modplayer). You can install it using this command:
-```sh
-yay -S cli-modplayer
-```
-or
-```sh
-paru -S cli-modplayer
-```
-For other Linux distributions you should build it yourself. Maybe later I will add it somewhere else, who knows
-
-## Prerequisites
-
-Install packages with your distro manager. Example for Debian and Ubuntu systems:
+## Usage (target)
 
 ```sh
-sudo apt install g++ cmake libopenmpt-dev portaudio19-dev libncursesw5-dev
+modconductor [--no-recursive] [FILE|DIR]...
 ```
 
-## Build
+Files and directories from the arguments (or the current directory) are scanned recursively
+into the playlist; `--no-recursive` turns that off. Settings and favourites live in
+`~/.config/modconductor/`.
+
+## Dependencies
+
+Required: libopenmpt, PortAudio, libxmp, a C++20 compiler and CMake 3.18+.
+Optional (audio export): libFLAC, LAME. FTXUI is fetched by CMake at a pinned tag.
+
+Debian / Ubuntu:
 
 ```sh
-cmake -S . -B build
-cmake --build build
+sudo apt install cmake g++ pkg-config libopenmpt-dev portaudio19-dev libxmp-dev libflac-dev libmp3lame-dev
 ```
 
-## Run
+## Build and test
 
 ```sh
-./build/cli-modtracker /path/to/song.mod
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
+ctest --test-dir build --output-on-failure
+./build/modconductor --version
 ```
-New thing: Simple mode
-```sh
-./build/cli-modtracker /path/to/song.mod --simple
-```
-It has no pattern view, only metadata, seekbar and some key bindings for comfortable use.
 
-Or you can download one of the prebuilt binaries in the "Releases"
-Or download one from GitHub workflow artifacts.
+Some tests need a specific module and read its path from `MODCONDUCTOR_TEST_SONG`; without it
+they are reported as skipped.
 
-Key bindings inside the UI:
+## Credits
 
-- `Space` — pause or resume playback
-- `←` / `→` (or `h` / `l`) — jump to the previous or next order
-- `[` / `]` — move backward or forward by 8 rows inside the order list
-- `PgUp` / `PgDn` (or `u` / `d`) — page through channel columns when the module has more than four channels
-- `N` — show or hide the info overlay
-- `Q` — quit the program
+- Forked from [Master290/cli-modplayer](https://github.com/Master290/cli-modplayer) (MIT).
+- Uses [libopenmpt](https://lib.openmpt.org/), [libxmp](https://github.com/libxmp/libxmp),
+  [PortAudio](https://www.portaudio.com/) and [FTXUI](https://github.com/ArthurSonzogni/FTXUI).
 
+## License
 
-### TODO
-add crossplatform support (windows and mac)
-uhh idk
+MIT, see [LICENSE](LICENSE).
