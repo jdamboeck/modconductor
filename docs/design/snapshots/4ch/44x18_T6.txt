@@ -1,0 +1,18 @@
+ cli-mod  Cydonian Sky · dubmoo…  [ || ]    
+┌─ Playlist ────────────────── 18 modules ─┐
+│  all 18   * favs 3              / search │
+│──────────────────────────────────────────│
+│ XM ·2                                   ▲│
+│ > Cydonian Sky                    * x   █│
+│   dubmood · xm                    3:24  ▼│
+│──────────────────────────────────────────│
+│ NOW PLAYING                              │
+│ Cydonian Sky                             │
+│ dubmood · xm · 4 ch · 125 bpm            │
+│ ━━━━━━━━━━━━━━━───────────────────────── │
+│ 1:18 / 3:24                    ord 07/16 │
+│                                          │
+│ f fav · d delete · ↑↓ move               │
+└──────────────────────────────────────────┘
+ 1:18  ╵╵━╵━╵━╵━╵┃█╵─╵─╵─╵╵─╵─╵─╵─╵─  3:24  
+ space play     T6 · playlist + now playing 
