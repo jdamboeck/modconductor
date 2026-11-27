@@ -37,7 +37,7 @@ implementations, and background export. The project is renamed throughout.
 ## Repo layout after M0
 ```
 CMakeLists.txt            project(modconductor); FTXUI v6 FetchContent; pkg-config: libopenmpt, portaudio-2.0, libxmp (REQUIRED); flac/lame optional
-CLAUDE.md                 one line → docs/design/CLAUDE.md (+ build/test notes)
+CLAUDE.md                 agent rules, build/test, architecture rules, PR flow (exists; 0.1 updates paths)
 src/main.cpp              args → Library scan → Session → ConductorApp::run
 src/core/                 lib modconductor_core (no FTXUI)
   player.{hpp,cpp}        audio thread, AudioGraph, snapshots
@@ -241,7 +241,7 @@ their own files.
 
 | key | milestone | issue | stage | blocked by |
 |---|---|---|---|---|
-| 0.1 | M0 Restructure | Rename to modconductor; new CMake layout (core/ui/audio libs); FTXUI v6 pin; delete the legacy UIs/browser/note_formatter; CI + `libxmp-dev`; README; root CLAUDE.md; LICENSE attribution | A1 | — |
+| 0.1 | M0 Restructure | Rename to modconductor; new CMake layout (core/ui/audio libs); FTXUI v6 pin; delete the legacy UIs/browser/note_formatter; CI + `libxmp-dev`; README; update root CLAUDE.md build/layout section; LICENSE attribution | A1 | — |
 | 0.2 | M0 | Player rewrite: module_ext, LoadedSong off-thread load + swap, Frame ring, latency-aware snapshot, mute/solo/pan/loop/seek API | A2 | 0.1 |
 | 0.3 | M0 | Library scanner (parallel, progress, SIGINT, `--no-recursive`), Session (modes, next/prev/wrap, undo), Settings + favourites | A2 | 0.1 |
 | 0.4 | M0 | SongInfo: pattern copy, timeline, notes, analysis, key; effect_text; `analysis_tests` | A2 | 0.1 |
