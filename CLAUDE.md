@@ -37,8 +37,9 @@ ctest --test-dir build --output-on-failure
 - Golden and analysis tests need `MODCONDUCTOR_TEST_SONG` pointing to a local copy of
   "Cydonian Sky" by dubmood (XM). They must skip cleanly when it is unset, so CI stays green.
   Never commit the song.
-- CI (ubuntu-latest) ships libopenmpt 0.7.x; local builds may have 0.8+. Guard newer calls such as
-  `get_time_at_position` and `get_current_tempo2` with `OPENMPT_API_VERSION_AT_LEAST`.
+- CI (ubuntu-latest, Ubuntu 26.04) ships libopenmpt 0.8.x, and local builds use 0.8+. Only 0.8+ is
+  built and tested, so calls such as `get_time_at_position` and `get_current_tempo2` may be used
+  directly. `OPENMPT_API_VERSION_AT_LEAST` fallbacks for 0.7 are optional and untested; don't add new ones.
 
 ## Architecture rules
 - `src/core` has no FTXUI. `src/ui` draws only into `CellGrid`; FTXUI is used only for terminal
